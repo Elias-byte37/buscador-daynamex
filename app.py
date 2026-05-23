@@ -1,51 +1,41 @@
 import streamlit as st
 import pandas as pd
-from streamlit_extras.copy_to_clipboard import copy_to_clipboard
 
-# Configuración de página
-st.set_page_config(page_title="Daynamex | Ventas", layout="centered")
+# 1. Título y Configuración
+st.set_page_config(page_title="Daynamex | Buscador de Convertidores", layout="wide")
+st.title("🔍 Buscador Comercial Daynamex 2026")
 
-# --- CARGA DE DATOS ---
-URL_DE_TU_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?gid=68779616&single=true&output=csv"
-
-@st.cache_data(ttl=600)
+# 2. Cargar tu Google Sheet (aquí pondrías el link público de tu CSV)
+# Sugerencia: Publica tu Google Sheet como CSV y usa ese URL
+url = "TU_URL_DE_CSV_AQUI" 
+@st.cache_data
 def load_data():
-    try:
-        df = pd.read_csv(URL_DE_TU_CSV)
-        df.columns = df.columns.str.strip()
-        return df
-    except Exception as e:
-        st.error(f"Error al cargar la base de datos: {e}")
-        return pd.DataFrame()
+    return pd.read_csv(url)
 
 df = load_data()
 
-# --- INTERFAZ ---
-st.title("🔍 Daynamex Ventas 2026")
-st.markdown("Buscador oficial para el equipo de ventas.")
+# 3. Buscador Inteligente
+search = st.text_input("¿Qué auto buscas? (Ej: Jetta 2015)")
 
-busqueda = st.text_input("Escribe modelo, marca o motor...", placeholder="Ej: Jetta 2015")
-
-if busqueda and not df.empty:
-    mask = df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)
-    resultados = df[mask]
+if search:
+    # Filtro sencillo por nombre de auto
+    results = df[df.apply(lambda row: search.lower() in row.astype(str).str.lower().to_string(), axis=1)]
     
-    if not resultados.empty:
-        st.write(f"Se encontraron {len(resultados)} resultados:")
-        for idx, row in resultados.iterrows():
-            with st.container(border=True):
-                st.subheader(f"{row.get('Marca', '')} {row.get('Submarca', '')}")
-                st.caption(f"Motor: {row.get('Motor', '')} | Año: {row.get('Año', '')}")
-                st.success(f"**Producto:** {row.get('Nombre del articulo', '')}")
-                st.info(f"**Precio:** ${row.get('Precio', '')} | **Posición:** {row.get('Posicion', '')}")
-                
-                texto = (f"¡Hola! Confirmamos la pieza para tu {row.get('Marca', '')} {row.get('Submarca', '')} "
-                         f"({row.get('Motor', '')}, {row.get('Año', '')}). El producto es el {row.get('Nombre del articulo', '')} "
-                         f"y tiene un precio de ${row.get('Precio', '')}. ¿Te gustaría apartarlo?")
-                
-                if copy_to_clipboard(texto, label="📋 Copiar cotización para WhatsApp"):
-                    st.toast("¡Cotización copiada!", icon="✅")
+    if not results.empty:
+        st.write(f"Resultados encontrados: {len(results)}")
+        
+        for index, row in results.iterrows():
+            st.divider()
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                st.subheader(f"{row['Marca']} {row['Submarca']}")
+                st.write(f"**Motor:** {row['Motor']} | **Año:** {row['Año']}")
+                st.success(f"**Producto:** {row['Nombre del artículo']} - **Precio:** ${row['Precio']}")
+            
+            with col2:
+                # El botón mágico de copiar
+                texto_cotizacion = f"Hola! La pieza para tu {row['Marca']} {row['Submarca']} es el {row['Nombre del artículo']} y tiene un precio de ${row['Precio']}."
+                st.button("📋 Copiar cotización", key=index, on_click=lambda t=texto_cotizacion: st.write(f"Copiado al portapapeles: {t}"))
     else:
-        st.warning("No se encontraron resultados.")
-else:
-    st.info("Escribe algo en el buscador para empezar.")
+        st.warning("No se encontró ese modelo. Recuerda revisar si falta cargarlo.")
