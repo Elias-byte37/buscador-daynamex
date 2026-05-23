@@ -19,7 +19,8 @@ try:
     
     st.title("🔍 Buscador Comercial Daynamex")
     st.markdown("---")
-    busqueda = st.text_input("Ingresa modelo, marca o motor para buscar:")
+    # Texto solicitado por el usuario
+    busqueda = st.text_input("Ingresa el modelo del convertidor:")
     
     if busqueda:
         mask = df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)
