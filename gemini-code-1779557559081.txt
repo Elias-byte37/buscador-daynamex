@@ -1,0 +1,5 @@
+streamlit
+pandas
+streamlit-extras
+
+**Sube ambos archivos (`app.py` y `requirements.txt`) a tu GitHub** y ya podrás darle al botón de **Deploy** en Streamlit. ¡Con eso tendrás tu herramienta en línea funcionando para todo tu equipo!
