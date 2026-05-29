@@ -5,33 +5,30 @@ import io
 
 st.set_page_config(page_title="Buscador Daynamex", layout="centered")
 
-# --- ACTUALIZA ESTA URL CON LA DE TU NUEVA HOJA ---
-URL = "TU_NUEVA_URL_DE_CSV_AQUÍ"
+# Definimos la URL globalmente
+URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?gid=68779616&single=true&output=csv"
 
 @st.cache_data(ttl=60)
-def get_data():
+def get_data(url):
     try:
-        r = requests.get(URL)
+        r = requests.get(url)
         r.raise_for_status()
         return pd.read_csv(io.StringIO(r.text))
     except Exception as e:
+        st.error(f"Error al descargar: {e}")
         return pd.DataFrame()
 
 try:
-    df = get_data()
+    df = get_data(URL_CSV)
     if not df.empty:
         df.columns = df.columns.str.strip()
         
         st.title("🔍 Buscador Comercial Daynamex")
         st.markdown("---")
         
-        # DEBUG: Si no encuentra resultados, saber qué columnas tiene
-        # st.write(f"Columnas detectadas: {list(df.columns)}") 
-        
         busqueda = st.text_input("Ingresa el modelo, marca o nombre del auto:")
         
         if busqueda:
-            # Filtro robusto que convierte todo a texto
             mask = df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)
             res = df[mask]
             
@@ -54,8 +51,8 @@ try:
                             if col != col_imagen and pd.notna(row[col]):
                                 st.write(f"**{col}:** {row[col]}")
             else:
-                st.warning("No se encontraron resultados. Verifica si la URL del CSV es la correcta.")
+                st.warning("No se encontraron resultados.")
     else:
-        st.error("No se pudo cargar el archivo. Asegúrate de haber publicado la hoja correcta en Archivo > Publicar en la web.")
+        st.error("No se pudo cargar el archivo. Verifica la URL publicada.")
 except Exception as e:
-    st.error(f"Error: {e}")
+    st.error(f"Error general: {e}")
