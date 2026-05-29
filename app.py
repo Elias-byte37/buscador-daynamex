@@ -5,17 +5,16 @@ import io
 
 st.set_page_config(page_title="Buscador Daynamex", layout="centered")
 
-# URL de tu CSV publicado
-URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?gid=68779616&single=true&output=csv"
+# --- ACTUALIZA ESTA URL CON LA DE TU NUEVA HOJA ---
+URL = "TU_NUEVA_URL_DE_CSV_AQUÍ"
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=60)
 def get_data():
     try:
         r = requests.get(URL)
-        r.raise_for_status() 
+        r.raise_for_status()
         return pd.read_csv(io.StringIO(r.text))
     except Exception as e:
-        st.error(f"Error al descargar los datos: {e}")
         return pd.DataFrame()
 
 try:
@@ -25,9 +24,14 @@ try:
         
         st.title("🔍 Buscador Comercial Daynamex")
         st.markdown("---")
+        
+        # DEBUG: Si no encuentra resultados, saber qué columnas tiene
+        # st.write(f"Columnas detectadas: {list(df.columns)}") 
+        
         busqueda = st.text_input("Ingresa el modelo, marca o nombre del auto:")
         
         if busqueda:
+            # Filtro robusto que convierte todo a texto
             mask = df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)
             res = df[mask]
             
@@ -35,31 +39,23 @@ try:
                 st.success(f"Se encontraron {len(res)} resultados:")
                 for _, row in res.iterrows():
                     with st.container(border=True):
-                        # Detecta cualquier columna que contenga la palabra 'IMAGEN'
                         col_imagen = next((c for c in df.columns if 'IMAGEN' in c.upper()), None)
                         
                         if col_imagen and pd.notna(row[col_imagen]):
                             img_link = str(row[col_imagen]).strip()
-                            # Corrector para links de imgbb
-                            if "ibb.co" in img_link and not img_link.endswith((".jpg", ".png", ".jpeg")):
-                                img_link = img_link.replace("ibb.co", "i.ibb.co") + ".jpg"
                             if not img_link.startswith("http"):
                                 img_link = "https://" + img_link
-                                
                             try:
                                 st.image(img_link, width=300)
                             except:
                                 st.warning("No se pudo cargar la imagen.")
                         
-                        # Muestra todas las columnas del Excel dinámicamente
                         for col in df.columns:
                             if col != col_imagen and pd.notna(row[col]):
                                 st.write(f"**{col}:** {row[col]}")
             else:
-                st.warning("No se encontraron resultados.")
-        else:
-            st.info("Escribe algo arriba para comenzar a buscar.")
+                st.warning("No se encontraron resultados. Verifica si la URL del CSV es la correcta.")
     else:
-        st.error("La hoja de cálculo está vacía o hubo un error al cargar.")
+        st.error("No se pudo cargar el archivo. Asegúrate de haber publicado la hoja correcta en Archivo > Publicar en la web.")
 except Exception as e:
-    st.error(f"Error general: {e}")
+    st.error(f"Error: {e}")
