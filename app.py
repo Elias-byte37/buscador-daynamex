@@ -5,9 +5,11 @@ import io
 
 st.set_page_config(page_title="Buscador Daynamex", layout="centered")
 
-# --- Logo en la parte superior ---
+# --- Logo actualizado ---
+LOGO_URL = "https://i.ibb.co/svYK2B05/LOGO-DAYNAMEX.png" 
+
 try:
-    st.image("LOGO DAYNAMEX.png", width=250)
+    st.image(LOGO_URL, width=250)
 except:
     st.title("🔍 Buscador Comercial Daynamex")
 
@@ -32,7 +34,6 @@ try:
     df.columns = df.columns.str.strip()
 
     if not df.empty:
-        # Título principal
         st.subheader("Sistema de Inventario")
         st.markdown("---")
         
