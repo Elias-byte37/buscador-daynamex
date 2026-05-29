@@ -5,13 +5,16 @@ import io
 
 st.set_page_config(page_title="Buscador Daynamex", layout="centered")
 
-# --- Logo actualizado ---
+# --- Logo centrado ---
 LOGO_URL = "https://i.ibb.co/svYK2B05/LOGO-DAYNAMEX.png" 
 
-try:
-    st.image(LOGO_URL, width=250)
-except:
-    st.title("🔍 Buscador Comercial Daynamex")
+# Creamos 3 columnas: la del medio es donde va el logo
+c1, c2, c3 = st.columns([1, 2, 1])
+with c2:
+    try:
+        st.image(LOGO_URL, width=250)
+    except:
+        st.title("🔍 Daynamex")
 
 # --- URLs ---
 URL_1 = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?gid=68779616&single=true&output=csv"
@@ -53,10 +56,8 @@ try:
                             img_link = str(row[col_imagen]).strip()
                             if not img_link.startswith("http"):
                                 img_link = "https://" + img_link
-                            try:
-                                st.image(img_link, width=300)
-                            except:
-                                st.warning("No se pudo cargar la imagen.")
+                            # Centramos también la imagen del producto
+                            st.image(img_link, width=300)
                         
                         for col in df.columns:
                             if col != col_imagen and pd.notna(row[col]):
