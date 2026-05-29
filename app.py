@@ -21,7 +21,6 @@ def get_data():
 try:
     df = get_data()
     if not df.empty:
-        # Limpiamos espacios en nombres de columnas
         df.columns = df.columns.str.strip()
         
         st.title("🔍 Buscador Comercial Daynamex")
@@ -29,7 +28,6 @@ try:
         busqueda = st.text_input("Ingresa el modelo, marca o nombre del auto:")
         
         if busqueda:
-            # La magia: esta línea busca en TODAS las columnas a la vez
             mask = df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)
             res = df[mask]
             
@@ -37,12 +35,12 @@ try:
                 st.success(f"Se encontraron {len(res)} resultados:")
                 for _, row in res.iterrows():
                     with st.container(border=True):
-                        # Buscamos dinámicamente la columna que contenga "imagen"
-                        col_imagen = next((c for c in df.columns if 'imagen' in c.lower()), None)
+                        # Detecta cualquier columna que contenga la palabra 'IMAGEN'
+                        col_imagen = next((c for c in df.columns if 'IMAGEN' in c.upper()), None)
                         
                         if col_imagen and pd.notna(row[col_imagen]):
                             img_link = str(row[col_imagen]).strip()
-                            # Corrector automático para links de imgbb
+                            # Corrector para links de imgbb
                             if "ibb.co" in img_link and not img_link.endswith((".jpg", ".png", ".jpeg")):
                                 img_link = img_link.replace("ibb.co", "i.ibb.co") + ".jpg"
                             if not img_link.startswith("http"):
@@ -53,9 +51,8 @@ try:
                             except:
                                 st.warning("No se pudo cargar la imagen.")
                         
-                        # Mostramos TODAS las columnas dinámicamente
+                        # Muestra todas las columnas del Excel dinámicamente
                         for col in df.columns:
-                            # Ignoramos la columna de imagen para no repetirla y mostramos el resto
                             if col != col_imagen and pd.notna(row[col]):
                                 st.write(f"**{col}:** {row[col]}")
             else:
@@ -66,11 +63,3 @@ try:
         st.error("La hoja de cálculo está vacía o hubo un error al cargar.")
 except Exception as e:
     st.error(f"Error general: {e}")
-```eof
-
-### ¿Qué pasos debes seguir?
-1. **Actualiza tu Google Sheets:** Asegúrate de que las columnas nuevas tengan los nombres claros.
-2. **Commit:** Pega este código en `app.py` y dale a "Commit changes".
-3. **Reboot:** En Streamlit, dale a "Reboot app" para que tome los nuevos nombres de columnas.
-
-¡Ahora, cada vez que agregues un nuevo campo en tu Excel, aparecerá automáticamente en el buscador sin que tengas que tocar el código nunca más!
