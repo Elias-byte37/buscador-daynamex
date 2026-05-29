@@ -5,8 +5,9 @@ import io
 
 st.set_page_config(page_title="Buscador Daynamex", layout="centered")
 
-# URL de tu CSV publicado
-URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?gid=68779616&single=true&output=csv"
+# --- PEGA AQUÍ LOS DOS ENLACES CSV (uno por pestaña) ---
+URL_1 = https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?output=csv
+URL_2 = https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?output=csv
 
 @st.cache_data(ttl=60)
 def get_data(url):
@@ -18,25 +19,30 @@ def get_data(url):
         return pd.DataFrame()
 
 try:
-    df = get_data(URL_CSV)
+    # Cargamos ambas tablas
+    df1 = get_data(URL_1)
+    df2 = get_data(URL_2)
+    
+    # Unimos ambas en una sola tabla
+    df = pd.concat([df1, df2], ignore_index=True)
+    df.columns = df.columns.str.strip()
+
     if not df.empty:
-        df.columns = df.columns.str.strip()
-        
         st.title("🔍 Buscador Comercial Daynamex")
         st.markdown("---")
         
         busqueda = st.text_input("Ingresa el modelo, marca o nombre del auto:")
         
         if busqueda:
-            # Buscamos en todo el DataFrame convirtiendo a string, sin importar columnas
-            # Esto es infalible aunque cambien los nombres de columnas
-            res = df[df.apply(lambda row: row.astype(str).str.contains(busqueda, case=False).any(), axis=1)]
+            # Búsqueda global en todas las columnas combinadas
+            mask = df.apply(lambda row: row.astype(str).str.contains(busqueda, case=False).any(), axis=1)
+            res = df[mask]
             
             if not res.empty:
                 st.success(f"Se encontraron {len(res)} resultados:")
                 for _, row in res.iterrows():
                     with st.container(border=True):
-                        # Buscamos la columna de imagen (buscando cualquier palabra que contenga "IMAGEN")
+                        # Detecta automáticamente columnas con 'IMAGEN'
                         col_imagen = next((c for c in df.columns if 'IMAGEN' in c.upper()), None)
                         
                         if col_imagen and pd.notna(row[col_imagen]):
@@ -48,13 +54,13 @@ try:
                             except:
                                 st.warning("No se pudo cargar la imagen.")
                         
-                        # Mostramos todas las columnas
+                        # Muestra el resto de los datos
                         for col in df.columns:
                             if col != col_imagen and pd.notna(row[col]):
                                 st.write(f"**{col}:** {row[col]}")
             else:
-                st.warning("No se encontraron resultados. Asegúrate de escribir bien el modelo.")
+                st.warning("No se encontraron resultados.")
     else:
-        st.error("No se detectaron datos. Asegúrate de que la hoja en Google Sheets esté publicada.")
+        st.error("No se detectaron datos. Asegúrate de publicar ambas pestañas en Google Sheets como CSV.")
 except Exception as e:
     st.error(f"Error técnico: {e}")
