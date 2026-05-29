@@ -5,7 +5,7 @@ import io
 
 st.set_page_config(page_title="Buscador Daynamex", layout="centered")
 
-# Definimos la URL globalmente
+# URL de tu CSV publicado
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSNPiCLWRdXv7mE3SSoIxh055sOftk2JzVOxrNBulDzbzqooFV2erznw-9HpyEIBhtASghBxZcFTSvX/pub?gid=68779616&single=true&output=csv"
 
 @st.cache_data(ttl=60)
@@ -15,7 +15,6 @@ def get_data(url):
         r.raise_for_status()
         return pd.read_csv(io.StringIO(r.text))
     except Exception as e:
-        st.error(f"Error al descargar: {e}")
         return pd.DataFrame()
 
 try:
@@ -29,13 +28,15 @@ try:
         busqueda = st.text_input("Ingresa el modelo, marca o nombre del auto:")
         
         if busqueda:
-            mask = df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)
-            res = df[mask]
+            # Buscamos en todo el DataFrame convirtiendo a string, sin importar columnas
+            # Esto es infalible aunque cambien los nombres de columnas
+            res = df[df.apply(lambda row: row.astype(str).str.contains(busqueda, case=False).any(), axis=1)]
             
             if not res.empty:
                 st.success(f"Se encontraron {len(res)} resultados:")
                 for _, row in res.iterrows():
                     with st.container(border=True):
+                        # Buscamos la columna de imagen (buscando cualquier palabra que contenga "IMAGEN")
                         col_imagen = next((c for c in df.columns if 'IMAGEN' in c.upper()), None)
                         
                         if col_imagen and pd.notna(row[col_imagen]):
@@ -47,12 +48,13 @@ try:
                             except:
                                 st.warning("No se pudo cargar la imagen.")
                         
+                        # Mostramos todas las columnas
                         for col in df.columns:
                             if col != col_imagen and pd.notna(row[col]):
                                 st.write(f"**{col}:** {row[col]}")
             else:
-                st.warning("No se encontraron resultados.")
+                st.warning("No se encontraron resultados. Asegúrate de escribir bien el modelo.")
     else:
-        st.error("No se pudo cargar el archivo. Verifica la URL publicada.")
+        st.error("No se detectaron datos. Asegúrate de que la hoja en Google Sheets esté publicada.")
 except Exception as e:
-    st.error(f"Error general: {e}")
+    st.error(f"Error técnico: {e}")
